@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  localstack:
+    container_name: localaws-container-localstack
+    image: localstack/localstack:0.13.3
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    platform: linux/amd64
+    environment:
+      SERVICES: s3,dynamodb,kms
+      EDGE_PORT: 4566
+      DATA_DIR: /tmp/localstack/data
+      INIT_SCRIPTS_PATH: /init/scripts
+      DEFAULT_REGION: 'ap-northeast-1'
+      KMS_PROVIDER: 'local-kms'
+    networks:
+      - default
+    ports:
+      - '4566:4566'
+    volumes:
+      - ./docker/init/scripts:/init/scripts:ro
+      - ./docker/init/data:/init/data:rw
+
+networks:
+  default:
+    name: localaws-network-default
