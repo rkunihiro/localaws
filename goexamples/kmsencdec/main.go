@@ -4,38 +4,37 @@ import (
 	"context"
 	"encoding/base64"
 	"log"
+	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/kms"
 )
 
-var EndpointURL = "http://localhost:4566"
-var AWSRegion = "ap-northeast-1"
 var KMSKey = "alias/local-kms-key"
 
 func main() {
 	defer func() {
-		err := recover()
-		if err != nil {
+		if err := recover(); err != nil {
 			log.Fatalln(err)
 		}
 	}()
 
-	cfg, err := config.LoadDefaultConfig(
-		context.TODO(),
-		config.WithEndpointResolverWithOptions(
+	optFuns := []func(*config.LoadOptions) error{}
+	if defaultRegion := os.Getenv("AWS_DEFAULT_REGION"); defaultRegion != "" {
+		optFuns = append(optFuns, config.WithDefaultRegion(defaultRegion))
+	}
+	if endpointURL := os.Getenv("AWS_ENDPOINT"); endpointURL != "" {
+		optFuns = append(optFuns, config.WithEndpointResolverWithOptions(
 			aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-				if EndpointURL != "" {
-					return aws.Endpoint{
-						SigningRegion: AWSRegion,
-						URL:           EndpointURL,
-					}, nil
-				}
-				return aws.Endpoint{}, &aws.EndpointNotFoundError{}
+				return aws.Endpoint{
+					SigningRegion: region,
+					URL:           endpointURL,
+				}, nil
 			}),
-		),
-	)
+		))
+	}
+	cfg, err := config.LoadDefaultConfig(context.TODO(), optFuns...)
 	if err != nil {
 		log.Fatalf("LoadDefaultConfig failed:%v", err)
 	}

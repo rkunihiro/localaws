@@ -1,0 +1,38 @@
+services:
+  localstack:
+    container_name: localaws-container-localstack
+    image: localstack/localstack:2.0.1
+    platform: linux/amd64
+    environment:
+      # EAGER_SERVICE_LOADING: "1"
+      # SERVICES: s3,dynamodb,kms
+      # DEBUG: 1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: "ap-northeast-1"
+    networks:
+      - default
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./docker/init/scripts:/etc/localstack/init/ready.d:ro
+      - ./docker/init/data:/init/data:rw
+
+  golang:
+    container_name: localaws-container-golang
+    image: golang:1.20.3-bullseye
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: "ap-northeast-1"
+      AWS_ENDPOINT: http://localstack:4566/
+    networks:
+      - default
+    volumes:
+      - .:/app
+    working_dir: /app
+    tty: true
+
+networks:
+  default:
+    name: localaws-network-default
